@@ -13,6 +13,21 @@ class IncomingThread(threading.Thread):
         super(IncomingThread, self).__init__()
         self.incoming_queue = incoming_queue
 
+    def main_menu(self, ssh_handler):
+        ssh_handler.send_message("")
+        ssh_handler.send_message("Welcome to the MUD!")
+        ssh_handler.send_message("What do you want to do?")
+        ssh_handler.send_message("1. Sign In")
+        ssh_handler.send_message("2. Sign Up")
+        ssh_handler.send_message("3. Settings")
+        ssh_handler.send_message("4. Exit")
+        return self.handle_user_input(ssh_handler, ssh_handler.read_data("clear"))
+
+    def go_to_game(self, ssh_handler):
+        ssh_handler.send_message("")
+        ssh_handler.send_message("Welcome to the MUD!")
+        return 0
+
     def run(self):
         while True:
             client_socket, addr = self.incoming_queue.get()
@@ -23,7 +38,7 @@ class IncomingThread(threading.Thread):
     def is_valid_password(self, pass1, pass2, ssh_handler):
         if pass1 != pass2:
             return "Password Do Not Match"
-        cazz = ssh_handler.decrypt_aes(ssh_handler.read_key(), pass1)
+
         # Check length
         if not (8 <= len(ssh_handler.decrypt_aes(ssh_handler.read_key(), pass1)) <= 16):
             return "Length not between 8 and 16 characters."
@@ -75,14 +90,9 @@ class IncomingThread(threading.Thread):
 
         res = "ko"
         while res == "ko":
-            ssh_handler.send_message("")
-            ssh_handler.send_message("Welcome to the MUD!")
-            ssh_handler.send_message("What do you want to do?")
-            ssh_handler.send_message("1. Sign In")
-            ssh_handler.send_message("2. Sign Up")
-            ssh_handler.send_message("3. Settings")
-            ssh_handler.send_message("4. Exit")
-            res = self.handle_user_input(ssh_handler, ssh_handler.read_data("clear"))
+            res = self.main_menu(ssh_handler)
+        if res == "Signed In":
+            self.go_to_game(ssh_handler)
 
     def settings(self, ssh_handler, user_input):
         return "ok"
@@ -100,14 +110,17 @@ class IncomingThread(threading.Thread):
             lines = f.readlines()
             for line in lines:
                 stored_email, charname, stored_pwd = line.split(":")
-                if username == stored_email:
+                print (stored_email, len(stored_email))
+                if username.decode("utf-8") == stored_email:
                     user_ok = True
+                    print (stored_pwd)
                     stored_pwd = stored_pwd.replace("\n", "")
+                    print (stored_pwd)
                     break
             f.close()
             if user_ok and stored_pwd == passwd:
                 ssh_handler.send_message("Login Successful!")
-                return "ok"
+                return "Signed In"
             else:
                 ssh_handler.send_message("Login Not Found!")
                 return "ko"
@@ -168,10 +181,10 @@ class IncomingThread(threading.Thread):
             with open("credentials.txt", "a") as f:
                 f.write(email.decode("utf-8") + ":")
                 f.write(username + ":")
-                f.write(hashlib.md5(ssh_handler.decrypt_aes(ssh_handler.read_key(), pass1).encode("utf-8")).hexdigest() + "\n")
+                f.write(hashlib.sha256(ssh_handler.decrypt_aes(ssh_handler.read_key(), pass1).encode("utf-8")).hexdigest() + "\n")
                 f.close()
                 ssh_handler.send_message("Registration Successful!")
-                return "ok"
+                return "Signed Up"
         else:
             return "ko"
 
@@ -183,13 +196,17 @@ class IncomingThread(threading.Thread):
         user_input = user_input_str.decode('utf-8')
 
         if user_input.lower() == "sign in" or user_input.lower() == "1":
-            return self.sign_in(ssh_handler, user_input)
+            res = self.sign_in(ssh_handler, user_input)
+            return res
 
         elif user_input.lower() == "sign up" or user_input.lower() == "2":
-            return self.sign_up(ssh_handler, user_input)
+            res = self.sign_up(ssh_handler, user_input)
+            return "ko"
+
 
         elif user_input.lower() == "settings" or user_input.lower() == "3":
-            return self.settings(ssh_handler, user_input)
+            res = self.settings(ssh_handler, user_input)
+            return "ko"
 
         elif user_input.lower() == "exit" or user_input.lower() == "4":
             ssh_handler.send_message("Goodbye!")

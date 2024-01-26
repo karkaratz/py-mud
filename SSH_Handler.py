@@ -109,7 +109,7 @@ class SSHHandler(paramiko.ServerInterface):
                     if text == "clear":
                         return appended_message
                     elif text == "hash":
-                        return hashlib.md5(appended_message).hexdigest()
+                        return hashlib.sha256(appended_message).hexdigest()
                     else:
                         tmp = self.encrypt_aes(self.read_key(), appended_message)
                         return tmp
