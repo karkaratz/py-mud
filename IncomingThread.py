@@ -15,7 +15,6 @@ class IncomingThread(threading.Thread):
         self.incoming_queue = incoming_queue
         self.active_queue = active_queue
 
-
     def run(self):
         while True:
             client_socket, addr = self.incoming_queue.get()
@@ -80,7 +79,7 @@ class IncomingThread(threading.Thread):
         res = "ko"
         while res == "ko":
             res = common.main_menu(ssh_handler)
-            if res==0:
+            if res == 0:
                 res = self.handle_user_input(ssh_handler, ssh_handler.read_data("clear"))
         if res == "Signed In":
             self.active_queue.put(ssh_handler)
@@ -169,7 +168,8 @@ class IncomingThread(threading.Thread):
             with open("credentials.txt", "a") as f:
                 f.write(email.decode("utf-8") + ":")
                 f.write(username + ":")
-                f.write(hashlib.sha256(ssh_handler.decrypt_aes(ssh_handler.read_key(), pass1).encode("utf-8")).hexdigest() + "\n")
+                f.write(hashlib.sha256(
+                    ssh_handler.decrypt_aes(ssh_handler.read_key(), pass1).encode("utf-8")).hexdigest() + "\n")
                 f.close()
                 ssh_handler.send_message("Registration Successful!")
                 return "Signed Up"

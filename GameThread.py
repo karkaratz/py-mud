@@ -4,6 +4,7 @@ import queue
 import time
 import common
 
+
 class GameThread(threading.Thread):
     def __init__(self, game_queue, selector_update_queue):
         super(GameThread, self).__init__()
@@ -28,13 +29,17 @@ class GameThread(threading.Thread):
         # Check if there is data available to read from the channel
         if ssh_handler.channel.recv_ready():
             # Read the data from the channel using read_data method
-            #player.current_command += self.handle_user_input(ssh_handler, ssh_handler.read_data_single("clear", player.current_command))
+            # player.current_command += self.handle_user_input(ssh_handler, ssh_handler.read_data_single("clear", player.current_command))
 
             result = ssh_handler.read_data_single("clear", player.current_command, player.cursor_position)
-            print (result)
-            player.set_command(result[0])
-            player.set_cursor(result[1])
-            print ("AAAA", player.current_command)
+            print(result[0].decode("utf-8")[len(result[0])-1])
+            if result[0].decode("utf-8")[len(result[0])-1]!="\r":
+                player.set_command(result[0])
+                player.set_cursor(result[1])
+            else :
+                player.set_command("".encode("utf-8"))
+                player.set_cursor(0)
+                self.handle_user_input(ssh_handler, result[0].decode("utf-8")[:len(result[0])-1])
             self.selector_update_queue.put((player, ssh_handler))
 
     def handle_user_input(self, ssh_handler, user_input_str):
@@ -42,11 +47,10 @@ class GameThread(threading.Thread):
         username = ""
         passwd = ""
         user_ok = False
-        user_input = user_input_str.decode('utf-8')
-
+        user_input = user_input_str
 
         if user_input.lower() == "help" or user_input.lower() == "1":
-            res = common.help_menu
+            res = common.help_menu(ssh_handler)
             return "portanna"
 
         if user_input.lower() == "settings" or user_input.lower() == "3":

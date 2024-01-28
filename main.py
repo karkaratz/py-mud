@@ -4,8 +4,9 @@ from GameThread import GameThread
 from SelectorThread import SelectorThread
 import queue
 
-
 port = 2222
+
+
 def main():
     # Create queues for managing game states
     incoming_queue = queue.Queue()
@@ -21,7 +22,6 @@ def main():
     num_g_threads = 5  # You can adjust this based on your requirements
     game_threads = [GameThread(game_queue, selector_update_queue) for _ in range(num_g_threads)]
     selector_thread = SelectorThread(active_queue, game_queue, selector_update_queue)
-
 
     # Start the IncomingThreads
     for thread in incoming_threads:
@@ -44,6 +44,7 @@ def main():
         client_socket, addr = server_socket.accept()
         # Add the new connection to the incoming queue
         incoming_queue.put((client_socket, addr))
+
 
 if __name__ == "__main__":
     main()

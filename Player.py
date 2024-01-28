@@ -1,6 +1,4 @@
-
 class Player():
-
 
     def __init__(self, name, character_name):
         super(Player, self).__init__()

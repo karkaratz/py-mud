@@ -6,6 +6,7 @@ import common
 import selectors
 from Player import Player
 
+
 class SelectorThread(threading.Thread):
 
     def __init__(self, active_queue, game_queue, selector_update_queue):
@@ -34,7 +35,7 @@ class SelectorThread(threading.Thread):
             events = self.sel.select(timeout=0.1)
             for key, mask in events:
                 key.data(key[0], self.clients[key[0]])
-                #game_queue.put(clients[key.fileobjid])
+                # game_queue.put(clients[key.fileobjid])
 
             try:
                 # Get an SSH handler from the active queue
@@ -42,11 +43,9 @@ class SelectorThread(threading.Thread):
                 upd = self.selector_update_queue.get(block=False)
                 player = upd[0]
                 handler = upd[1]
-                self.clients[handler]=player
+                self.clients[handler] = player
             except queue.Empty:
                 pass
-
-
 
     def manage_things(self, key, client):
         self.game_queue.put(client)

@@ -5,7 +5,6 @@ from base64 import b64encode, b64decode
 import hashlib
 
 
-
 class SSHHandler(paramiko.ServerInterface):
     def __init__(self, channel):
         self.channel = channel
@@ -61,7 +60,7 @@ class SSHHandler(paramiko.ServerInterface):
 
     def read_data_single(self, text, input, pos):
         user_input = bytearray()
-        user_input.extend(map(ord,input))
+        user_input.extend(map(ord, input))
         self.channel.settimeout(100)
         cursor_position = pos
         try:
@@ -86,23 +85,25 @@ class SSHHandler(paramiko.ServerInterface):
                     cursor_position -= 1
                     # Move the cursor left
                     self.channel.send(b'\x1b[D')
-                elif escape_sequence == b'[C' and cursor_position < len(user_input.decode('utf-8', errors='ignore')):  # Right arrow
+                elif escape_sequence == b'[C' and cursor_position < len(
+                        user_input.decode('utf-8', errors='ignore')):  # Right arrow
                     cursor_position += 1
                     # Move the cursor right
                     self.channel.send(b'\x1b[C')
 
             elif ord(data) == 32:
-                if cursor_position <=   len(user_input.decode('utf-8', errors='ignore')):
+                if cursor_position <= len(user_input.decode('utf-8', errors='ignore')):
                     user_input.insert(cursor_position, ord(" "))
                     self.channel.send(user_input[cursor_position:])
-                    self.channel.send(b'\x1b[D' * (len(user_input) - cursor_position -1))
+                    self.channel.send(b'\x1b[D' * (len(user_input) - cursor_position - 1))
                     cursor_position += 1
 
             elif data == b'\r':
                 # Handle user input
                 self.send_message("")
+                user_input.insert(cursor_position, ord("\r"))
                 appended_message = user_input
-                cur_pos =cursor_position
+                cur_pos = cursor_position
                 user_input = bytearray()
                 cursor_position = 0
                 user_input.clear()
@@ -159,7 +160,8 @@ class SSHHandler(paramiko.ServerInterface):
                         cursor_position -= 1
                         # Move the cursor left
                         self.channel.send(b'\x1b[D')
-                    elif escape_sequence == b'[C' and cursor_position < len(user_input.decode('utf-8', errors='ignore')):  # Right arrow
+                    elif escape_sequence == b'[C' and cursor_position < len(
+                            user_input.decode('utf-8', errors='ignore')):  # Right arrow
                         cursor_position += 1
                         # Move the cursor right
                         self.channel.send(b'\x1b[C')
@@ -168,7 +170,7 @@ class SSHHandler(paramiko.ServerInterface):
                     if cursor_position < len(user_input.decode('utf-8', errors='ignore')):
                         user_input.insert(cursor_position, ord(" "))
                         self.channel.send(user_input[cursor_position:])
-                        self.channel.send(b'\x1b[D' * (len(user_input) - cursor_position -1))
+                        self.channel.send(b'\x1b[D' * (len(user_input) - cursor_position - 1))
                         cursor_position += 1
 
                 elif data == b'\r':
