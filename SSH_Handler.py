@@ -59,6 +59,78 @@ class SSHHandler(paramiko.ServerInterface):
                 f.close()
                 return line
 
+    def read_data_single(self, text, input, pos):
+        user_input = bytearray()
+        user_input.extend(map(ord,input))
+        self.channel.settimeout(100)
+        cursor_position = pos
+        try:
+            # Receive user input
+            data = self.channel.recv(1)
+            if not data:
+                print(f"no data")
+            elif ord(data) == 127:  # Backspace key
+                # Handle backspace
+                if user_input:
+                    # Remove the last character
+                    user_input.pop(cursor_position - 1)
+                    cursor_position -= 1
+                    # Send backspace to update the displayed text
+                    self.channel.send(b'\x08 \x08')
+
+            elif data == b'\x1b':  # Escape key (arrow key sequence)
+                escape_sequence = self.channel.recv(2)
+
+                if escape_sequence == b'[D' and cursor_position > 0:  # Left arrow
+
+                    cursor_position -= 1
+                    # Move the cursor left
+                    self.channel.send(b'\x1b[D')
+                elif escape_sequence == b'[C' and cursor_position < len(user_input.decode('utf-8', errors='ignore')):  # Right arrow
+                    cursor_position += 1
+                    # Move the cursor right
+                    self.channel.send(b'\x1b[C')
+
+            elif ord(data) == 32:
+                if cursor_position <=   len(user_input.decode('utf-8', errors='ignore')):
+                    user_input.insert(cursor_position, ord(" "))
+                    self.channel.send(user_input[cursor_position:])
+                    self.channel.send(b'\x1b[D' * (len(user_input) - cursor_position -1))
+                    cursor_position += 1
+
+            elif data == b'\r':
+                # Handle user input
+                self.send_message("")
+                appended_message = user_input
+                cur_pos =cursor_position
+                user_input = bytearray()
+                cursor_position = 0
+                user_input.clear()
+                if text == "clear":
+                    return appended_message, cur_pos
+                elif text == "hash":
+                    return hashlib.sha256(appended_message).hexdigest(), cur_pos
+                else:
+                    tmp = self.encrypt_aes(self.read_key(), appended_message)
+                    return tmp, cur_pos
+
+
+            else:
+                user_input.insert(cursor_position, data[0])
+                cursor_position += 1
+                if text == "clear":
+                    self.channel.send(data)  # Echo the character
+
+                else:
+                    # Replace the typed character with 'X'
+                    self.channel.send(b'X')
+                    # Update the displayed text after the cursor
+            return user_input, cursor_position
+        except EOFError:
+            print("Connection closed by the client.")
+        except Exception as e:
+            print(f"Error reading data: {e}")
+
     def read_data(self, text):
         user_input = bytearray()
         self.channel.settimeout(100)

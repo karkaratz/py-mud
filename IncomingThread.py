@@ -3,30 +3,18 @@ import re
 import threading
 import hashlib
 from SSH_Handler import SSHHandler
+import common
 
 # SSH server parameters
 host_key_path = 'key.pem'
 
 
 class IncomingThread(threading.Thread):
-    def __init__(self, incoming_queue):
+    def __init__(self, incoming_queue, active_queue):
         super(IncomingThread, self).__init__()
         self.incoming_queue = incoming_queue
+        self.active_queue = active_queue
 
-    def main_menu(self, ssh_handler):
-        ssh_handler.send_message("")
-        ssh_handler.send_message("Welcome to the MUD!")
-        ssh_handler.send_message("What do you want to do?")
-        ssh_handler.send_message("1. Sign In")
-        ssh_handler.send_message("2. Sign Up")
-        ssh_handler.send_message("3. Settings")
-        ssh_handler.send_message("4. Exit")
-        return self.handle_user_input(ssh_handler, ssh_handler.read_data("clear"))
-
-    def go_to_game(self, ssh_handler):
-        ssh_handler.send_message("")
-        ssh_handler.send_message("Welcome to the MUD!")
-        return 0
 
     def run(self):
         while True:
@@ -35,6 +23,7 @@ class IncomingThread(threading.Thread):
 
             # Handle the client using Paramiko directly
             self.handle_client(client_socket)
+
     def is_valid_password(self, pass1, pass2, ssh_handler):
         if pass1 != pass2:
             return "Password Do Not Match"
@@ -90,9 +79,11 @@ class IncomingThread(threading.Thread):
 
         res = "ko"
         while res == "ko":
-            res = self.main_menu(ssh_handler)
+            res = common.main_menu(ssh_handler)
+            if res==0:
+                res = self.handle_user_input(ssh_handler, ssh_handler.read_data("clear"))
         if res == "Signed In":
-            self.go_to_game(ssh_handler)
+            self.active_queue.put(ssh_handler)
 
     def settings(self, ssh_handler, user_input):
         return "ok"
@@ -110,12 +101,9 @@ class IncomingThread(threading.Thread):
             lines = f.readlines()
             for line in lines:
                 stored_email, charname, stored_pwd = line.split(":")
-                print (stored_email, len(stored_email))
                 if username.decode("utf-8") == stored_email:
                     user_ok = True
-                    print (stored_pwd)
                     stored_pwd = stored_pwd.replace("\n", "")
-                    print (stored_pwd)
                     break
             f.close()
             if user_ok and stored_pwd == passwd:
