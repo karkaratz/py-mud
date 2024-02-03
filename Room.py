@@ -33,12 +33,10 @@ class Room:
     def display_links(self):
         if not self.visible:
             print("This room is currently not visible.")
-            return
-
         if not self.links:
-            print("No links in this room.")
+            print("No Paths in this room.")
         else:
-            print("Links to other rooms:")
+            print("{} Paths to other places:".format(self.name))
             for direction, linked_room in self.links.items():
-                print(f"- {direction.capitalize()}: {linked_room.name}")
+                print(f"- {direction.capitalize()}: {linked_room}")
 

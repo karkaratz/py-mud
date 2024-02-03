@@ -1,0 +1,5 @@
+Tavern|You are sitting in a tavern.|south:TEST 1-->east:TEST 2-->west:TEST 3-->north:TEST4|Ostia-->Cristo
+TEST 1|DESCRIPTION TEST 1.|north:Tavern|
+TEST 2|DESCRIPTION TEST 2.|west:Tavern-->south:TEST 3|
+TEST 3|DESCRIPTION TEST 3.|east:Tavern|
+TEST 4|DESCRIPTION TEST 4.|south:Tavern|
